@@ -17,6 +17,8 @@ CLIENT_TRUST="${BRIDGE_CLIENT_TRUST_PEM:-$PROJECT_ROOT/infra/certs/ca-client.crt
 
 TARGET_URL="${BRIDGE_TARGET_URL:-https://backend-service:8443}"
 DN_HEADER="${BRIDGE_DN_HEADER_NAME:-x-cert-client-subject-dn}"
+# Hostname alinhado ao SAN do certificado servidor gerado em infra/certs/server-ext.cnf
+ROUTE_HOST="${BRIDGE_ROUTE_HOST:-bridge-app-bridge-poc-app.apps-crc.testing}"
 
 echo "[ocp] [$APP_NAME] context=$CTX namespace=$NS replicas=$REPLICAS target=$TARGET_URL"
 
@@ -96,7 +98,8 @@ MSYS_NO_PATHCONV=1 oc --context "${CTX}" -n "${NS}" set volume deployment/"${APP
 # 7. Inject runtime configuration
 oc --context "${CTX}" -n "${NS}" set env deployment/"${APP_NAME}" \
   BRIDGE_TARGET_URL="${TARGET_URL}" \
-  BRIDGE_DN_HEADER_NAME="${DN_HEADER}"
+  BRIDGE_DN_HEADER_NAME="${DN_HEADER}" \
+  QUARKUS_LOG_CATEGORY__COM_EXAMPLE_POC_BRIDGE__LEVEL=DEBUG
 
 # 8. QoS Guaranteed: requests = limits
 CONTAINER=$(oc --context "${CTX}" -n "${NS}" get deployment "${APP_NAME}" \
@@ -144,4 +147,16 @@ YAML
 oc --context "${CTX}" -n "${NS}" scale deployment/"${APP_NAME}" --replicas="${REPLICAS}"
 
 oc --context "${CTX}" -n "${NS}" rollout status deployment/"${APP_NAME}" --timeout=300s
+
+# 13. Route TLS passthrough — a aplicação termina o TLS; hostname alinhado ao SAN do certificado servidor
+if ! oc --context "${CTX}" -n "${NS}" get route "${APP_NAME}" &>/dev/null; then
+  oc --context "${CTX}" -n "${NS}" create route passthrough "${APP_NAME}" \
+    --service="${APP_NAME}" \
+    --port=9443 \
+    --hostname="${ROUTE_HOST}"
+  echo "[ocp] [$APP_NAME] Route created: https://${ROUTE_HOST}"
+else
+  echo "[ocp] [$APP_NAME] Route already exists: https://${ROUTE_HOST}"
+fi
+
 echo "[ocp] [$APP_NAME] ready — ${REPLICAS} replica(s)"

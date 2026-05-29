@@ -5,20 +5,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 CTX="${OCP_CONTEXT:-$(oc config current-context)}"
-NS="${OCP_NAMESPACE:-bridge-poc-app}"
+NS="${OCP_NAMESPACE:-poc-mtls-bridge-app}"
 BUILD_NAME="mtls-bridge"
 APP_NAME="bridge-app"
 REPLICAS="${BRIDGE_REPLICAS:-2}"
 
 # Caminhos locais dos PEMs usados para criar/atualizar o Secret no cluster
-SERVER_CERT="${BRIDGE_SERVER_CERT_PEM:-$PROJECT_ROOT/certs/server.crt}"
-SERVER_KEY="${BRIDGE_SERVER_KEY_PEM:-$PROJECT_ROOT/certs/server.key}"
-CLIENT_TRUST="${BRIDGE_CLIENT_TRUST_PEM:-$PROJECT_ROOT/certs/ca-client.crt}"
+SERVER_CERT="${BRIDGE_SERVER_CERT_PEM:-$PROJECT_ROOT/infra/certs/server.crt}"
+SERVER_KEY="${BRIDGE_SERVER_KEY_PEM:-$PROJECT_ROOT/infra/certs/server.key}"
+CLIENT_TRUST="${BRIDGE_CLIENT_TRUST_PEM:-$PROJECT_ROOT/infra/certs/ca-client.crt}"
 
 TARGET_URL="${BRIDGE_TARGET_URL:-https://backend-service:8443}"
-DN_HEADER="${BRIDGE_DN_HEADER_NAME:-x-client-cert-subject-dn}"
+DN_HEADER="${BRIDGE_DN_HEADER_NAME:-x-cert-client-subject-dn}"
 
 echo "[ocp] [$APP_NAME] context=$CTX namespace=$NS replicas=$REPLICAS target=$TARGET_URL"
+
+# 0. Namespace — cria se não existir
+if ! oc --context "${CTX}" get namespace "${NS}" &>/dev/null; then
+  oc --context "${CTX}" new-project "${NS}"
+  echo "[ocp] [$APP_NAME] Namespace ${NS} created"
+else
+  echo "[ocp] [$APP_NAME] Namespace ${NS} already exists"
+fi
 
 # 1. Compile — produces target/*-runner.jar consumed by Containerfile.ocp
 cd "$PROJECT_ROOT"
@@ -69,14 +77,16 @@ oc --context "${CTX}" -n "${NS}" create secret generic bridge-tls-certs \
   --dry-run=client -o yaml \
   | oc --context "${CTX}" -n "${NS}" apply -f -
 
-# 5. Deploy (once) — ImageChange trigger trata rollouts subsequentes
-if ! oc --context "${CTX}" -n "${NS}" get deployment "${APP_NAME}" &>/dev/null; then
+# 5. Deploy (once) — guarda verifica deployment E service para evitar falha parcial do new-app
+if ! oc --context "${CTX}" -n "${NS}" get deployment "${APP_NAME}" &>/dev/null && \
+   ! oc --context "${CTX}" -n "${NS}" get service   "${APP_NAME}" &>/dev/null; then
   oc --context "${CTX}" -n "${NS}" new-app "${BUILD_NAME}:latest" --name="${APP_NAME}"
   echo "[ocp] [$APP_NAME] Deployment created"
 fi
 
 # 6. Monta o Secret de TLS em /deployments/certs (idempotente via --overwrite)
-oc --context "${CTX}" -n "${NS}" set volume deployment/"${APP_NAME}" \
+# MSYS_NO_PATHCONV=1 impede Git Bash de converter --mount-path (path de container) para path Windows
+MSYS_NO_PATHCONV=1 oc --context "${CTX}" -n "${NS}" set volume deployment/"${APP_NAME}" \
   --add --name=tls-certs \
   --type=secret \
   --secret-name=bridge-tls-certs \

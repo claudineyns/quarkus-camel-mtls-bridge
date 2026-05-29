@@ -10,7 +10,7 @@ public interface BridgeConfig {
     TargetConfig target();
 
     @WithName("dn.header-name")
-    @WithDefault("x-client-cert-subject-dn")
+    @WithDefault("x-cert-client-subject-dn")
     String dnHeaderName();
 
     interface TargetConfig {

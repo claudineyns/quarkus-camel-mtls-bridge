@@ -1,0 +1,15 @@
+[req]
+req_extensions     = v3_req
+distinguished_name = dn
+prompt = no
+[dn]
+CN = localhost
+O  = Example
+C  = BR
+[v3_req]
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+IP.1  = 127.0.0.1
+DNS.2 = bridge-app
+DNS.3 = bridge-app-bridge-poc-app.apps-crc.testing

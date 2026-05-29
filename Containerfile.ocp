@@ -1,0 +1,25 @@
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /deployments
+
+COPY target/*-runner.jar /deployments/app.jar
+
+EXPOSE 9443
+EXPOSE 9000
+
+# -Xms256m                       : pré-aloca heap para absorver rampa inicial sem OOM
+# -Xmx512m                       : cobre pool de 25 conexões TLS + overhead Camel + headroom GC
+# MaxMetaspaceSize                : ~3x o uso em produção aquecida para proxy leve (~40 MB)
+# ReservedCodeCacheSize           : limita JIT; uso esperado ~15 MB pós-aquecimento
+# UseG1GC                         : explícito — GC padrão no JDK 21, coletor orientado a pausas curtas
+# MaxGCPauseMillis=200            : alvo de pausa adequado para proxy; prioriza latência sobre throughput
+# InitiatingHeapOccupancyPercent  : inicia GC concurrent ao atingir 35% do heap (vs default 45%)
+#                                   — antecipa o ciclo antes de pressionar o teto
+CMD ["java", \
+     "-Xms256m", "-Xmx512m", \
+     "-XX:MaxMetaspaceSize=128m", \
+     "-XX:ReservedCodeCacheSize=64m", \
+     "-XX:+UseG1GC", \
+     "-XX:MaxGCPauseMillis=200", \
+     "-XX:InitiatingHeapOccupancyPercent=35", \
+     "-jar", "app.jar"]

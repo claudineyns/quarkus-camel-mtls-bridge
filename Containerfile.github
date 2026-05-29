@@ -1,0 +1,52 @@
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
+
+WORKDIR /deployments
+
+# ── Labels dinâmicas — injetadas via --build-arg no pipeline de CI/CD ────────
+ARG VERSION
+ARG REVISION
+
+# ── OCI Image Spec — Image Config labels ─────────────────────────────────────
+# Gravados no config.json da imagem; visíveis via "podman inspect".
+# O GitHub Container Registry lê as annotations do manifest OCI (não do config),
+# portanto estas labels DEVEM ser repassadas também via "--annotation" no push
+# (ver instruções abaixo).
+# https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL \
+ org.opencontainers.image.title="mtls-bridge-middleware" \
+ org.opencontainers.image.description="MTLS bridge middleware — Secure communication bridge for microservices" \
+ org.opencontainers.image.vendor="claudineyns" \
+ org.opencontainers.image.licenses="MIT" \
+ org.opencontainers.image.url="https://github.com/claudineyns/quarkus-camel-mtls-bridge" \
+ org.opencontainers.image.source="https://github.com/claudineyns/quarkus-camel-mtls-bridge" \
+ org.opencontainers.image.documentation="https://github.com/claudineyns/quarkus-camel-mtls-bridge#readme" \
+ org.opencontainers.image.version="${VERSION}" \
+ org.opencontainers.image.revision="${REVISION}" \
+ org.opencontainers.image.base.name="registry.access.redhat.com/ubi9/openjdk-21-runtime"
+
+COPY target/*-runner.jar /deployments/app.jar
+
+EXPOSE 8080
+EXPOSE 9001
+
+CMD ["java", "-jar", "app.jar"]
+
+# ── Instruções de build e push ────────────────────────────────────────────────
+#
+# 1. Build
+#    podman build \
+#      --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+#      --build-arg VERSION=0.2.0 \
+#      --build-arg REVISION=$(git rev-parse HEAD) \
+#      -f Containerfile.github \
+#      -t ghcr.io/claudineyns/poc-mtls-bridge:latest .
+#
+# 2. Push com annotations no manifest OCI
+#    (necessário para o GitHub Container Registry reconhecer source,
+#     description e licenses no console do package)
+#
+#    podman push \
+#      --annotation "org.opencontainers.image.source=https://github.com/claudineyns/quarkus-camel-mtls-bridge" \
+#      --annotation "org.opencontainers.image.description=MTLS bridge middleware — Secure communication bridge for microservices" \
+#      --annotation "org.opencontainers.image.licenses=MIT" \
+#      ghcr.io/claudineyns/poc-mtls-bridge:latest

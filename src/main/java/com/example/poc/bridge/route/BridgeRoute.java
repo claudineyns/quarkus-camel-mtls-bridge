@@ -1,11 +1,11 @@
 package com.example.poc.bridge.route;
 
-import com.example.poc.bridge.config.BridgeConfig;
 import com.example.poc.bridge.route.processor.ConnectivityErrorProcessor;
 import com.example.poc.bridge.route.processor.ResponseHeaderProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 
 import java.io.IOException;
@@ -13,8 +13,7 @@ import java.io.IOException;
 @ApplicationScoped
 public class BridgeRoute extends RouteBuilder {
 
-    @Inject
-    BridgeConfig config;
+    private static final String LOGGER = "com.example.poc.bridge";
 
     @Inject
     ConnectivityErrorProcessor connectivityErrorProcessor;
@@ -31,9 +30,12 @@ public class BridgeRoute extends RouteBuilder {
 
         from("platform-http:/?matchOnUriPrefix=true")
                 .setProperty("bridge.requestPath", header(Exchange.HTTP_PATH))
-                .setHeader(Exchange.HTTP_URI,
-                        simple(config.target().url().replaceAll("/$", "") + "${header.CamelHttpPath}"))
-                .to("http://localhost?throwExceptionOnFailure=false")
-                .process(responseHeaderProcessor);
+                .removeHeader("*")
+                .log(LoggingLevel.DEBUG, LOGGER,
+                        "→ REQ  ${header.CamelHttpMethod} ${header.CamelHttpPath} | headers: ${headers}")
+                .to("{{bridge.target.url}}?bridgeEndpoint=true&throwExceptionOnFailure=false")
+                .process(responseHeaderProcessor)
+                .log(LoggingLevel.DEBUG, LOGGER,
+                        "← RESP ${header.CamelHttpResponseCode} | headers: ${headers}");
     }
 }

@@ -21,9 +21,15 @@ import java.security.cert.X509Certificate;
 public class HttpComponentCustomizer {
 
     void configure(@Observes final BeforeConfigure event) {
+        final HttpClientConnectionManager connectionManager = buildConnectionManager();
+
         final HttpComponent http = event.getCamelContext().getComponent("http", HttpComponent.class);
         http.setCopyHeaders(false);
-        http.setClientConnectionManager(buildConnectionManager());
+        http.setClientConnectionManager(connectionManager);
+
+        final HttpComponent https = event.getCamelContext().getComponent("https", HttpComponent.class);
+        https.setCopyHeaders(false);
+        https.setClientConnectionManager(connectionManager);
     }
 
     private HttpClientConnectionManager buildConnectionManager() {

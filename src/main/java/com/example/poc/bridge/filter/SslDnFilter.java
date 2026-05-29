@@ -1,10 +1,10 @@
 package com.example.poc.bridge.filter;
 
 import com.example.poc.bridge.config.BridgeConfig;
-import io.quarkus.vertx.http.runtime.filters.Filter;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
+import io.quarkus.runtime.StartupEvent;
+import io.vertx.ext.web.Router;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -13,15 +13,17 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
 @ApplicationScoped
-public class SslDnFilter implements Filter {
+public class SslDnFilter {
+
+    @Inject
+    Router router;
 
     @Inject
     BridgeConfig config;
 
-    @Override
-    public Handler<RoutingContext> getHandler() {
+    void onStart(@Observes final StartupEvent event) {
         final String headerName = config.dnHeaderName();
-        return ctx -> {
+        router.route().order(Integer.MIN_VALUE).handler(ctx -> {
             final SSLSession sslSession = ctx.request().sslSession();
             if (sslSession != null) {
                 try {
@@ -34,11 +36,6 @@ public class SslDnFilter implements Filter {
                 } catch (final SSLPeerUnverifiedException ignored) {}
             }
             ctx.next();
-        };
-    }
-
-    @Override
-    public int getPriority() {
-        return -1;
+        });
     }
 }

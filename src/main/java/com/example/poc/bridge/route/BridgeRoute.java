@@ -10,6 +10,7 @@ import org.apache.camel.builder.RouteBuilder;
 
 import java.io.IOException;
 
+
 @ApplicationScoped
 public class BridgeRoute extends RouteBuilder {
 
@@ -30,12 +31,18 @@ public class BridgeRoute extends RouteBuilder {
 
         from("platform-http:/?matchOnUriPrefix=true")
                 .setProperty("bridge.requestPath", header(Exchange.HTTP_PATH))
+                .removeHeader(Exchange.HTTP_URI)
+                .removeHeader("Host")
                 .removeHeader("*")
-                .log(LoggingLevel.DEBUG, LOGGER,
-                        "→ REQ  ${header.CamelHttpMethod} ${header.CamelHttpPath} | headers: ${headers}")
-                .to("{{bridge.target.url}}?bridgeEndpoint=true&throwExceptionOnFailure=false")
+                .removeHeader("Content-Length")
+                .removeHeader("Transfer-Encoding")
+                .log(LoggingLevel.INFO, LOGGER,
+                        "→ INBOUND  [${header.CamelHttpMethod} ${header.CamelHttpPath}] headers=${headers}")
+                .to("vertx-http:{{bridge.target.url}}?throwExceptionOnFailure=false")
+                .log(LoggingLevel.INFO, LOGGER,
+                        "← BACKEND  [${header.CamelHttpResponseCode}] headers=${headers}")
                 .process(responseHeaderProcessor)
-                .log(LoggingLevel.DEBUG, LOGGER,
-                        "← RESP ${header.CamelHttpResponseCode} | headers: ${headers}");
+                .log(LoggingLevel.INFO, LOGGER,
+                        "← OUTBOUND [${header.CamelHttpResponseCode}] headers=${headers}");
     }
 }

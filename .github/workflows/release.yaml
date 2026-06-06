@@ -60,6 +60,8 @@ jobs:
             org.opencontainers.image.title=mtls-bridge
             org.opencontainers.image.description=MTLS bridge middleware — Secure communication bridge for microservices
             org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.url=https://github.com/claudineyns/quarkus-camel-mtls-bridge
+            org.opencontainers.image.source=https://github.com/claudineyns/quarkus-camel-mtls-bridge
 
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6

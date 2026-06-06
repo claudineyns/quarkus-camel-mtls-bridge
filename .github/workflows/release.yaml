@@ -57,7 +57,7 @@ jobs:
           # org.opencontainers.image.created   — adicionado automaticamente com o timestamp do build
           # org.opencontainers.image.revision  — adicionado automaticamente com o SHA do commit
           labels: |
-            org.opencontainers.image.title=mtls-bridge
+            org.opencontainers.image.title=mTLS Bridge
             org.opencontainers.image.description=MTLS bridge middleware — Secure communication bridge for microservices
             org.opencontainers.image.licenses=MIT
             org.opencontainers.image.url=https://github.com/claudineyns/quarkus-camel-mtls-bridge
@@ -75,6 +75,7 @@ jobs:
           annotations: |
             index:org.opencontainers.image.title=mTLS Bridge
             index:org.opencontainers.image.description=MTLS bridge middleware — Secure communication bridge for microservices
+            index:org.opencontainers.image.source=https://github.com/claudineyns/quarkus-camel-mtls-bridge
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}

@@ -1,4 +1,4 @@
-package com.example.poc.bridge.route.processor;
+package io.github.claudineyns.bridge.route.processor;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;

@@ -1,4 +1,4 @@
-package com.example.poc.bridge.component;
+package io.github.claudineyns.bridge.component;
 
 import io.vertx.core.http.HttpVersion;
 import io.vertx.ext.web.client.WebClientOptions;

@@ -1,4 +1,4 @@
-package com.example.poc.bridge.component;
+package io.github.claudineyns.bridge.component;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpResponse;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ProxyVertxHttpBinding extends DefaultVertxHttpBinding {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ProxyVertxHttpBinding.class);
+    private static final Logger LOG = LoggerFactory.getLogger("bridge.ProxyVertxHttpBinding");
 
     @Override
     public void populateResponseHeaders(Exchange exchange,

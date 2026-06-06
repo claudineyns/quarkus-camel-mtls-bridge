@@ -1,7 +1,7 @@
-package com.example.poc.bridge.route;
+package io.github.claudineyns.bridge.route;
 
-import com.example.poc.bridge.route.processor.ConnectivityErrorProcessor;
-import com.example.poc.bridge.route.processor.ResponseHeaderProcessor;
+import io.github.claudineyns.bridge.route.processor.ConnectivityErrorProcessor;
+import io.github.claudineyns.bridge.route.processor.ResponseHeaderProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -14,7 +14,7 @@ import java.io.IOException;
 @ApplicationScoped
 public class BridgeRoute extends RouteBuilder {
 
-    private static final String LOGGER = "com.example.poc.bridge";
+    private static final String LOGGER = "io.github.claudineyns.bridge";
 
     @Inject
     ConnectivityErrorProcessor connectivityErrorProcessor;

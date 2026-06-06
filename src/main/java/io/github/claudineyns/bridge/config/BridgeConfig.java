@@ -17,8 +17,18 @@ public interface BridgeConfig {
 
     CertConfig cert();
 
+    HttpClientConfig httpClient();
+
     interface TargetConfig {
         String url();
+    }
+
+    interface HttpClientConfig {
+        @WithName("max-pool-size")
+        int maxPoolSize();
+
+        @WithName("verify-host")
+        boolean verifyHost();
     }
 
     interface CertConfig {
